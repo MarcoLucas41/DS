@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Youtube Results</title>
+
+    <style>
+        html,
+        body {
+          font-family: raleway, sans-serif;
+          width: 100%;
+          height: 100%;
+          padding: 0;
+          margin: 0;
+        }
+
+        body {
+          display: flex;
+          background-color: #124e66;
+          justify-content: center;
+          align-items: center;
+          flex-wrap: nowrap;
+          overflow: hidden;
+          flex-direction: column;
+        }
+
+        button {
+          padding: 10px 20px;
+          background-color: hsl(8, 90%, 52%);
+          border: none;
+          color: #fff;
+          font-size: 16px;
+          cursor: pointer;
+          transition: background-color 0.4s;
+          margin-bottom: 20px;
+        }
+
+        button:hover {
+          background-color: hsl(19, 70%, 42%);
+        }
+
+        h1 {
+          color: #fff;
+          font-size: 20px;
+          margin-bottom: 20px;
+        }
+
+        .results-container {
+          box-sizing: border-box;
+          max-height: 400px;
+          border: 2px solid black;
+          padding: 20px;
+          border-radius: 25px;
+          overflow-y: auto;
+        }
+
+        .results {
+          color: #fff;
+          font-size: 16px;
+          line-height: 1.4;
+          text-align: center;
+          padding: 20px;
+        }
+
+        .button-container {
+          display: flex;
+          justify-content: center;
+        }
+
+        button {
+          border-radius: 5px;
+          width: 150px;
+          margin-right: 10px;
+        }
+
+        .result-title {
+          color: hsl(19, 90%, 52%);
+          font-weight: bold;
+          margin-bottom: 10px;
+        }
+
+        .result-description {
+          color: hsl(19, 90%, 52%);
+          margin-bottom: 20px;
+        }
+
+        .result-link {
+          color: hsl(19, 70%, 42%);
+          text-decoration: underline;
+        }
+
+        .animated-word {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          size: 100px;
+      }
+
+        .letterStatic {
+          transition: 0.4s;
+          transform: translateX(0);
+          cursor: grab;
+          color: #fff;
+      }
+
+      .letterStatic:hover {
+          background: -webkit-linear-gradient(120deg, hsl(19, 90%, 52%), hsl(56, 100%, 50%));
+          background-clip: border-box;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+      }
+
+      #menu-h {
+        background-color: #124e66;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 30px;
+        height: 100%;
+      }
+
+      #menu-h ul {
+        max-width: 1000px;
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #menu-h ul li {
+        display: vertical;
+      }
+
+      #menu-h ul li a {
+        color: #FFF;
+        padding: 20px;
+        display: inline-block;
+        border: 2px solid black;
+        border-radius: 20px;
+        text-decoration: none;
+        transition: background .4s;
+      }
+
+      #menu-h ul li a:hover {
+        background-color: #CD3700;
+      }
+
+    </style>
+</head>
+
+<body>
+<div th:unless="${noResults}" class="button-container">
+    <button onclick="previousPage()">Previous</button>
+    <button onclick="nextPage()">Next</button>
+</div>
+
+<script>
+    function nextPage() {
+      // Get the current URL
+      var currentURL = window.location.href;
+
+      // Extract the value of 'page'
+      var regex = /page=(\d+)/;
+      var match = currentURL.match(regex);
+      var currentPage = match ? parseInt(match[1]) : 0;
+
+      // Increment 'page'
+      var newPage = currentPage + 1;
+
+      // Construct the new URL with updated 'page'
+      var newURL = currentURL.replace(regex, "page=" + newPage);
+
+      // Navigate to the new URL
+      window.location.href = newURL;
+    }
+
+    function previousPage() {
+      // Get the current URL
+      var currentURL = window.location.href;
+
+      // Extract the value of 'page'
+      var regex = /page=(\d+)/;
+      var match = currentURL.match(regex);
+      var currentPage = match ? parseInt(match[1]) : 0;
+
+      // Decrement 'page'
+      var newPage = Math.max(currentPage - 1, 0);
+
+      // Construct the new URL with updated 'page'
+      var newURL = currentURL.replace(regex, "page=" + newPage);
+
+      // Navigate to the new URL
+      window.location.href = newURL;
+    }
+</script>
+
+
+
+
+<h1>Search Results:
+    <div class="animated-word">
+        <a href="/" style="text-decoration: none;">
+            <div class="letterStatic" style="position: absolute; top: 10px; left: 10px;">G</div>
+        </a>
+    </div>
+</h1>
+<div class="results-container">
+    <div class="results" th:utext="${results}">
+        <!-- Result items here -->
+    </div>
+</div>
+<form id="indexForm" action="/indexHackersNews" method="post">
+    <input type="hidden" name="queryParam" id="queryParam">
+    <button class="button" type="submit">Index Hacker News</button>
+</form>
+
+<script>
+    // Function to extract query parameter from URL
+    function getSearchTermFromUrl()
+    {
+        const pathName = window.location.pathname;
+        const parts = url.split('/');
+        const searchTerm = parts[parts.length - 2];
+        return searchTerm;
+    }
+
+    // Function to submit the form with query parameter
+    function submitFormWithQueryParam()
+    {
+        const form = document.getElementById('indexForm');
+        const queryParam = getSearchTermFromUrl();
+        if (queryParam)
+        {
+            document.getElementById('queryParam').value = queryParam;
+        }
+        form.submit();
+    }
+
+    // Submit the form when the button is clicked
+    document.querySelector('.button').addEventListener('click', submitFormWithQueryParam);
+</script>
+
+
+
+
+</body>
+</html>

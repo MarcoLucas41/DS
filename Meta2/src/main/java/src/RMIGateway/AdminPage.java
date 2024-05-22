@@ -71,7 +71,7 @@ public class AdminPage
 
                 String msg = new String(packet.getData(), 0, packet.getLength());
                 updateStatus(msg);
-                stringMenu = printAdminPage();
+                    stringMenu = printAdminPage();
             }
 
         } catch (IOException e) {
@@ -129,7 +129,7 @@ public class AdminPage
             {
                 this.barrelsStatus.set(id-1,"Offline");
                 this.barrelsIPs.set(id-1,"Null");
-                stringMenu = printAdminPage();
+                    stringMenu = printAdminPage();
             }
         }
         catch (IndexOutOfBoundsException e)
@@ -150,7 +150,7 @@ public class AdminPage
             ArrayList<Long> times = this.avgTimesBarrels.get(id);
             times.add(time);
             this.avgTimesBarrels.replace(id,times);
-            stringMenu = printAdminPage();
+                stringMenu = printAdminPage();
         }
         catch (IndexOutOfBoundsException e)
         {
@@ -244,7 +244,7 @@ public class AdminPage
     public void updateHashMap(HashMap<String, Integer> dic)
     {
         this.relevanceDictionary = dic;
-        stringMenu = printAdminPage();
+            stringMenu = printAdminPage();
     }
 
     /**
@@ -254,29 +254,6 @@ public class AdminPage
     public String getStringMenu() {
         return this.stringMenu;
     }
-
-    public boolean login(String username, String password)
-    {
-        boolean result = false;
-        try
-        {
-            FileInputStream file = new FileInputStream(Configuration.CREDENTIALS_FILE);
-            ObjectInputStream in = new ObjectInputStream(file);
-
-            HashMap<String, String> users = (HashMap<String, String>) in.readObject();
-
-            if (users.containsKey(username) && users.get(username).equals(password)) {
-                result = true;
-            }
-
-            in.close();
-        } catch (Exception e) {
-            System.out.println("Error reading credentials");
-        }
-
-        return result;
-    }
-
 
 
 }

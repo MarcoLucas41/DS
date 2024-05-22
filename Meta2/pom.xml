@@ -25,6 +25,10 @@
             <id>openai-repo</id>
             <url>https://mvnrepository.com/artifact/com.theokanning.openai-gpt3-java</url>
         </repository>
+        <repository>
+            <id>google-repo</id>
+            <url>https://mvnrepository.com/artifact/com.google.apis/google-api-services-youtube</url>
+        </repository>
     </repositories>
     <dependencies>
         <dependency>
@@ -112,6 +116,18 @@
             <version>1.18.32</version>
             <scope>provided</scope>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.google.api/api-common -->
+        <dependency>
+            <groupId>com.google.api</groupId>
+            <artifactId>api-common</artifactId>
+            <version>2.31.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-youtube</artifactId>
+            <version>v3-rev222-1.25.0</version>
+        </dependency>
+
 
     </dependencies>
 

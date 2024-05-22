@@ -109,6 +109,43 @@
         -webkit-text-fill-color: transparent;
     }
 
+    #menu-h {
+      background-color: #124e66;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 30px;
+      height: 100%;
+    }
+
+    #menu-h ul {
+      max-width: 1000px;
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #menu-h ul li {
+      display: vertical;
+    }
+
+    #menu-h ul li a {
+      color: #FFF;
+      padding: 20px;
+      display: inline-block;
+      border: 2px solid black;
+      border-radius: 20px;
+      text-decoration: none;
+      transition: background .4s;
+    }
+
+    #menu-h ul li a:hover {
+      background-color: #CD3700;
+    }
+
     </style>
   </head>
 
@@ -158,6 +195,9 @@
       }
     </script>
 
+
+
+
     <h1>Search Results:
       <div class="animated-word">
         <a href="/" style="text-decoration: none;">
@@ -170,5 +210,38 @@
         <!-- Result items here -->
       </div>
     </div>
+    <form id="indexForm" action="/indexHackersNews" method="post">
+      <input type="hidden" name="queryParam" id="queryParam">
+      <button class="button" type="submit">Index Hacker News</button>
+    </form>
+
+    <script>
+         // Function to extract query parameter from URL
+         function getSearchTermFromUrl()
+         {
+             const pathName = window.location.pathname;
+             const searchTerm = pathName.split('/')[2]
+             return searchTerm;
+         }
+
+         // Function to submit the form with query parameter
+         function submitFormWithQueryParam()
+         {
+             const form = document.getElementById('indexForm');
+             const queryParam = getSearchTermFromUrl();
+             if (queryParam)
+             {
+                 document.getElementById('queryParam').value = queryParam;
+             }
+             form.submit();
+         }
+
+         // Submit the form when the button is clicked
+         document.querySelector('.button').addEventListener('click', submitFormWithQueryParam);
+    </script>
+
+
+
+
   </body>
 </html>

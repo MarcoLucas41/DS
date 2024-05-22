@@ -122,25 +122,25 @@
 </head>
 
 <body>
-    <h1>
-        <div class="animated-word">
-            <a href="/">
-                <div class="letterStatic" style="position: absolute; top: 10px; left: 10px;">G</div>
-            </a>
+<h1>
+    <div class="animated-word">
+        <a href="/">
+            <div class="letterStatic" style="position: absolute; top: 10px; left: 10px;">G</div>
+        </a>
+    </div>
+</h1>
+<div class="form-container">
+    <h2>Index Hackers By Username</h2>
+    <form>
+        <div class="form-group">
+            <input type="text" placeholder="Username" name="username" required>
         </div>
-    </h1>
-    <div class="form-container">
-        <h2>Index Hackers By Username</h2>
-        <form>
-            <div class="form-group">
-                <input type="text" placeholder="Username" name="username" required>
-            </div>
-            <button type="submit">Index</button>
-        </form>
-        <div th:unless=${justClicked}>
-            <p th:if=${results} th:text="'The stories of @' + ${hacker} +' have been indexed'"></p>
-            <p th:unless=${results} th:text="'The user @' + ${hacker} + ' does not exist'"></p>
-        </div>
+        <button type="submit">Index</button>
+    </form>
+    <div th:unless=${justClicked}>
+        <p th:if=${results} th:text="'The stories of @' + ${hacker} +' have been indexed'"></p>
+        <p th:unless=${results} th:text="'The user @' + ${hacker} + ' does not exist'"></p>
+    </div>
 
 </body>
 

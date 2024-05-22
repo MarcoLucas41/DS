@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -30,7 +32,10 @@ import src.RMIInterface.RMIGatewayInterface;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import src.WebServer.HackerNewsAPI.HackerNewsAPI;
+import src.WebServer.YoutubeAPI.YoutubeAPI;
+
 
 @Controller
 public class GoogolController
@@ -38,8 +43,7 @@ public class GoogolController
     private RMIGatewayInterface gatewayInterface;
     private HackerNewsAPI hackerNewsAPI;
 
-    private boolean userLogged = false;
-    private String username;
+    private YoutubeAPI youtubeAPI;
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
@@ -51,43 +55,140 @@ public class GoogolController
     {
         this.gatewayInterface = gatewayInterface;
         this.hackerNewsAPI = new HackerNewsAPI();
+        this.youtubeAPI = new YoutubeAPI();
     }
 
-    // When the button is pressed, the form is submitted and we print the result in
-    // the ${query} variable
-    @GetMapping("/search")
-    public String search(@RequestParam(name = "query", required = false, defaultValue = "") String query,
-            Model model) throws Exception {
 
+    /**
+     * Given keywords typed in input box from "/Youtube", it redirects to view that showcases the youtube search results
+     * @param query Keywords from input box
+     * @param model Model
+     * @return Redirect to view that showcases the youtube search results
+     */
+    @GetMapping("/Youtube")
+    public String searchYoutube(@RequestParam(name = "query", required = false, defaultValue = "") String query,
+    Model model)
+    {
         if (query.isEmpty())
         {
-            // Returns "search" view template, if there's nothing on the query
-            return "search";
+            // Returns "youtube" view template, if there's nothing on the query
+            return "youtube";
         }
+        System.out.println("prompt = " + query);
 
-        // Sends the message to all clients connected to "/topic/admin"
-        messagingTemplate.convertAndSend("/topic/admin", new Message(convertToJSON(gatewayInterface.getAdminMenu())));
+        try 
+        {
+            //List<String> response = youtubeAPI.getYoutubeVideosUrls(query);
+            String message = "Youtube URLs retrieved!";
+            model.addAttribute("results", message);
+        } catch (Exception e) {
+            System.out.println("Error connecting to server through '/Youtube'");
+        }
+        return "redirect:/getYoutubeResults/" + query + "?page=0";
+    }
 
+    /**
+     * Given search terms, it indexes hacker news stories with terms in the title
+     * @param queryParam Search terms
+     * @return Response view
+     */
+    @PostMapping("/indexHackersNews")
+    public String IndexHackersNews(@RequestParam String queryParam)
+    {
+        List<String> results = new ArrayList<String>();
+        System.out.printf("Search Terms: %s\n",queryParam);
         try
         {
-            List<String> results = gatewayInterface.searchWords(query);
-            model.addAttribute("results", results);
+            results = hackerNewsAPI.getTopStoriesBySearchTerms(queryParam);
+            if (results.isEmpty())
+            {
+                return "menu";
+            }
+            System.out.println(results);
+            for (String url : results)
+            {
+                boolean searching = true;
+                while (searching) {
+                    try {
+                        gatewayInterface.indexNewURL(url);
+                        searching = false;
+                    } catch (Exception e) {
+                        searching = true;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+            //model.addAttribute("hackerNewsResult", "Error indexing Hacker News stories");
+            return "error";
         }
-        catch (Exception e)
-        {
-            System.out.println("Error connecting to server through '/search'");
-        }
-
-        return "redirect:/getSearchResults/" + query + "?page=0";
+        return "menu";
     }
 
-    @GetMapping("/admin")
-    public String admin() {
-        return "admin";
+    /**
+     * Given a username, it indexes into the barrels the stories from Hacker News published by that username
+     * @param username Username input
+     * @param model Model
+     * @return Response view
+     */
+    @GetMapping("/IndexHackersByUsername")
+    public String IndexHackersByUsername(
+            @RequestParam(name = "username", required = false, defaultValue = "") String username, Model model)
+    {
+        List<String> results = new ArrayList<String>();
+        model.addAttribute("justClicked", true);
+
+        if (username == null || username.isEmpty()) {
+            return "IndexHackersByUsername";
+        }
+
+        try {
+            results = hackerNewsAPI.getUserStories(username);
+
+            if (results == null || results.isEmpty()) {
+                model.addAttribute("results", false);
+                model.addAttribute("justClicked", false);
+                model.addAttribute("hacker", username);
+                return "IndexHackersByUsername";
+            }
+
+            for (String url : results)
+            {
+                boolean searching = true;
+                while (searching) {
+                    try {
+                        gatewayInterface.indexNewURL(url);
+                        searching = false;
+                    } catch (Exception e) {
+                        searching = true;
+                    }
+                }
+                gatewayInterface.indexNewURL(url);
+            }
+
+            model.addAttribute("justClicked", false);
+            model.addAttribute("results", true);
+            model.addAttribute("hacker", username);
+            System.out.println("results = " + results);
+
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+
+        return "IndexHackersByUsername";
     }
+
+    /**
+     * Given a URL, it is indexed into the RMIBarrels
+     * @param url Url to be indexed
+     * @param model Model
+     * @return Response view
+     * @throws RemoteException
+     */
     @GetMapping("/indexNewUrl")
     public String indexNewUrl(@RequestParam(name = "url", required = false, defaultValue = "") String url,
-            Model model) {
+            Model model) throws RemoteException
+    {
 
         if (url.isEmpty())
         {
@@ -95,8 +196,9 @@ public class GoogolController
             return "indexNewUrl";
         }
         System.out.println("url = " + url);
-
-        try {
+        messagingTemplate.convertAndSend("/topic/admin", new Message(convertToJSON(gatewayInterface.getAdminMenu())));
+        try
+        {
             gatewayInterface.indexNewURL(url);
             String message = "URL has been indexed to queue";
             model.addAttribute("results", message);
@@ -107,13 +209,15 @@ public class GoogolController
         return "indexNewUrl";
     }
 
+    /**
+     * Given a URL, it retrieves all hyperlinks that point to the URL
+     * @param url URL input
+     * @param model Model
+     * @return Response view containing the hyperlinks
+     */
     @GetMapping("/listPages")
     public String listPages(@RequestParam(name = "url", required = false, defaultValue = "") String url, Model model)
     {
-
-        if (!this.userLogged) {
-            return "redirect:/login";
-        }
 
         model.addAttribute("hasInfo", false);
 
@@ -158,104 +262,17 @@ public class GoogolController
         return "listPages";
     }
 
-    @GetMapping("/IndexHackersByUsername")
-    public String IndexHackersByUsername(
-            @RequestParam(name = "username", required = false, defaultValue = "") String username, Model model)
-    {
-        List<String> results;
 
-        model.addAttribute("justClicked", true);
-
-        if (username == null || username.isEmpty()) {
-            return "IndexHackersByUsername";
-        }
-
-        try {
-            results = hackerNewsAPI.getUserStories(username);
-
-            if (results == null || results.isEmpty())
-            {
-                model.addAttribute("results", false);
-                model.addAttribute("justClicked", false);
-                model.addAttribute("hacker", username);
-                return "IndexHackersByUsername";
-            }
-
-            for (String url : results)
-            {
-                boolean searching = true;
-                while (searching)
-                {
-                    try
-                    {
-                        gatewayInterface.indexNewURL(url);
-                        searching = false;
-                    }
-                    catch (Exception e)
-                    {
-                        searching = true;
-                    }
-                }
-                gatewayInterface.indexNewURL(url);
-            }
-
-            model.addAttribute("justClicked", false);
-            model.addAttribute("results", true);
-            model.addAttribute("hacker", username);
-            System.out.println("results = " + results);
-
-        } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
-        }
-
-        return "IndexHackersByUsername";
-    }
-
-    @GetMapping("/IndexHackersNews")
-    public String IndexHackersNews(Model model) {
-        List<String> results = new ArrayList<String>();
-
-        model.addAttribute("hackerNewsResult", "Indexing Hacker News top stories...");
-
-        try {
-            results = hackerNewsAPI.getTopStories();
-
-            if (results.isEmpty() || results == null) {
-                model.addAttribute("hackerNewsResult", "Error getting top stories from Hacker News!");
-                return "/";
-            }
-
-            for (String url : results) {
-                boolean searching = true;
-                while (searching) {
-                    try {
-                        gatewayInterface.indexNewURL(url);
-                        searching = false;
-                    } catch (Exception e) {
-                        searching = true;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
-            model.addAttribute("hackerNewsResult", "Ocorreu um erro ao indexar os top stories do Hacker News");
-            return "error";
-        }
-
-        model.addAttribute("hackerNewsBoolean", true);
-        model.addAttribute("hackerNewsResult", "Top stories from Hacker News indexed with success!");
-        model.addAttribute("username", this.username);
-        model.addAttribute("userLogged", this.userLogged);
-        return "menu";
-    }
 
     @MessageMapping("/hello")
     @SendTo("/topic/admin")
-    public void greeting() throws Exception {
+    public void greeting() throws Exception
+    {
         scheduler.scheduleAtFixedRate(this::sendMessage, 0, 1, TimeUnit.SECONDS);
     }
 
-    private void sendMessage() {
+    private void sendMessage()
+    {
         try
         {
             String s = convertToJSON(gatewayInterface.getAdminMenu());
@@ -267,115 +284,11 @@ public class GoogolController
     }
 
     @GetMapping("/")
-    public String root(Model model) {
-        model.addAttribute("userLogged", this.userLogged);
-        model.addAttribute("username", this.username);
+    public String root(Model model)
+    {
         return "menu";
     }
 
-    @GetMapping("/register")
-    public String register(Model model)
-    {
-        if (this.userLogged) {
-            return "redirect:/";
-        }
-
-        String username = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest()
-                .getParameter("username");
-        String password = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest()
-                .getParameter("password");
-
-        if (username == null || password == null) {
-            return "register";
-        }
-
-        File file = new File("src\\main\\java\\src\\WebServer\\login.txt");
-
-        try {
-            file.createNewFile();
-        } catch (IOException e) {
-            System.out.println("Error creating login file: " + e.getMessage());
-        }
-
-        //Checks if username is already taken
-        try (Scanner scanner = new Scanner(file)) {
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
-                String[] parts = line.split(";");
-
-                if (parts[0].equals(username)) {
-                    model.addAttribute("results", "Username already exists!");
-                    return "register";
-                }
-            }
-        } catch (FileNotFoundException e) {
-            System.out.println("Error reading login file: " + e.getMessage());
-        }
-
-        try (FileWriter fileWriter = new FileWriter(file, true);
-                BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-                PrintWriter out = new PrintWriter(bufferedWriter))
-        {
-            out.println(username + ";" + password);
-        } catch (IOException e) {
-            System.out.println("Error writing to login file: " + e.getMessage());
-        }
-
-        return "redirect:/login";
-    }
-
-    @GetMapping("/logout")
-    public String logout() {
-        this.userLogged = false;
-        return "redirect:/";
-    }
-
-    @GetMapping("/login")
-    public String login()
-    {
-
-        if (this.userLogged) {
-            return "redirect:/";
-        }
-
-        String username = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest()
-                .getParameter("username");
-        String password = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest()
-                .getParameter("password");
-
-        if (username == null || password == null) {
-            return "login";
-        }
-
-        File file = new File("src\\main\\java\\src\\WebServer\\login.txt");
-
-        try {
-            file.createNewFile();
-        } catch (IOException e) {
-            System.out.println("Error creating login file: " + e.getMessage());
-        }
-
-        try (Scanner scanner = new Scanner(file)) {
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
-                String[] parts = line.split(";");
-
-                if (parts[0].equals(username) && parts[1].equals(password))
-                {
-                    System.out.println("Login successful!");
-                    this.userLogged = true;
-                    this.username = username;
-                    return "redirect:/";
-                }
-            }
-            scanner.close();
-        } catch (FileNotFoundException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
-
-        System.out.println("Login failed!");
-        return "redirect:/login";
-    }
 
     public static void printJSON(String json) {
         try {
@@ -388,6 +301,11 @@ public class GoogolController
         }
     }
 
+    /**
+     * Given a string input, it creates a Json object from which the format is then returned back into a string
+     * @param input Input string
+     * @return String containing admin page information
+     */
     public static String convertToJSON(String input)
     {
         List<String> downloaders = new ArrayList<>();
@@ -396,7 +314,10 @@ public class GoogolController
 
         // Parse the input string and extract the relevant information
         String[] lines = input.split("\n");
-        int state = 0; // 0 - Downloaders, 1 - Barrels, 2 - Most Frequent Searches
+        int state = 0;
+        // 0 - Downloaders
+        // 1 - Barrels
+        // 2 - Most Frequent Searches
 
         for (String line : lines)
         {
@@ -451,7 +372,7 @@ public class GoogolController
         String result;
         try {
             result = objectMapper.writeValueAsString(json);
-            printJSON(result);
+            //printJSON(result);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -466,6 +387,14 @@ public class GoogolController
         return null;
     }
 
+    /**
+     * Handler for getting and displaying Googol search results
+     * @param model Model
+     * @param query String with the value passed by input box
+     * @param page Number of the page
+     * @return String with the results
+     * @throws Exception
+     */
     @GetMapping("getSearchResults/{query}")
     public String getSearchResults(Model model, @PathVariable String query, @RequestParam(defaultValue = "0") int page)
             throws Exception
@@ -473,12 +402,10 @@ public class GoogolController
         List<String> strings = new ArrayList<>();
         List<String> aux = gatewayInterface.searchWords(query);
 
-        // Envie a mensagem para os clientes conectados ao tópico "/topic/admin"
-        messagingTemplate.convertAndSend("/topic/admin", new Message(convertToJSON(gatewayInterface.getAdminMenu())));
-
-        if (aux.size() == 0) {
+        if (aux.isEmpty())
+        {
             model.addAttribute("noResults", true);
-            model.addAttribute("results", "Nenhum resultado encontrado!");
+            model.addAttribute("results", "No results!");
             return "getSearchResults";
         }
 
@@ -489,13 +416,63 @@ public class GoogolController
             String s = aux.get(i);
             strings.add(s);
         }
+        for(String s: strings)
+        {
+            System.out.println(s);
+        }
+
 
         String resultsString = String.join(",", strings);
+        resultsString = resultsString.replace(",", "<br><br>");
+        resultsString = resultsString.replace(";", "<br>");
+        System.out.println(resultsString);
 
+        model.addAttribute("results", resultsString);
+
+        return "getSearchResults";
+    }
+
+
+    /**
+     * Handler for getting and displaying youtube search results
+     * @param model Model
+     * @param query String with the value passed by input box
+     * @param page Number of the page
+     * @return String with the results
+     * @throws Exception
+     */
+    @GetMapping("getYoutubeResults/{query}")
+    public String getYoutubeResults(Model model, @PathVariable String query, @RequestParam(defaultValue = "0") int page)
+            throws Exception
+    {
+        List<String> strings = new ArrayList<>();
+        System.out.println(query);
+        List<String[]> aux = youtubeAPI.getYoutubeVideosUrls(query);
+
+        messagingTemplate.convertAndSend("/topic/admin", new Message(convertToJSON(gatewayInterface.getAdminMenu())));
+
+        if (aux.isEmpty())
+        {
+            System.out.println("no results");
+            model.addAttribute("noResults", true);
+            model.addAttribute("results", "No results!");
+            return "getYoutubeResults";
+        }
+
+        for(String[] info: aux)
+        {
+            String s = info[0] + ";" + info[1] + ";" + info[2];
+            System.out.println(s);
+            strings.add(s);
+        }
+
+
+        String resultsString = String.join(",", strings);
         resultsString = resultsString.replace(",", "<br><br>");
         resultsString = resultsString.replace(";", "<br>");
 
         model.addAttribute("results", resultsString);
-        return "getSearchResults";
+
+        return "getYoutubeResults";
     }
 }

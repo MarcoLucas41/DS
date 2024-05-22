@@ -8,6 +8,7 @@
 
     <style>
         /* Estilos CSS */
+
         html,
         body {
             font-family: raleway, sans-serif;
@@ -88,7 +89,21 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            size: 100px;
+        }
+
+        .letter {
+            transition: 0.4s;
+            transform: translateX(0);
+            cursor: grab;
+            color: #fff;
+        }
+
+        .letter:hover {
+            transform: translateY(-1rem);
+            background: -webkit-linear-gradient(120deg, hsl(19, 90%, 52%), hsl(56, 100%, 50%));
+            background-clip: border-box;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .letterStatic {
@@ -104,44 +119,42 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-
-        .letter {
-            transition: 0.4s;
-            transform: translateX(0);
-            cursor: grab;
-            color: #fff;
-        }
-
-        .letter:hover {
-            background: -webkit-linear-gradient(120deg, hsl(19, 90%, 52%), hsl(56, 100%, 50%));
-            background-clip: border-box;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
     </style>
+
+
+
 </head>
 
 <body>
     <h1>
         <div class="animated-word">
-            <a href="/">
+            <a href="/" style="text-decoration: none;">
                 <div class="letterStatic" style="position: absolute; top: 10px; left: 10px;">G</div>
             </a>
         </div>
     </h1>
+
     <div class="form-container">
-        <h2>Index Hackers By Username</h2>
+        <h2>Youtube</h2>
         <form>
             <div class="form-group">
-                <input type="text" placeholder="Username" name="username" required>
+                <input type="text" name="query" required>
             </div>
-            <button type="submit">Index</button>
+            <button type="submit">Search</button>
         </form>
-        <div th:unless=${justClicked}>
-            <p th:if=${results} th:text="'The stories of @' + ${hacker} +' have been indexed'"></p>
-            <p th:unless=${results} th:text="'The user @' + ${hacker} + ' does not exist'"></p>
-        </div>
+        <p th:if="${results != null}" th:text="${results}"></p>
+    </div>
 
+    <script>
+        document.querySelector('.form-group input[type=text]').addEventListener('keyup', function (e)
+        {
+            if (e.keyCode == 13)
+            {
+                result = document.querySelector('.form-group input[type=text]').value
+                window.location.href = 'http://localhost:8080/getYoutubeResults/' + result + "?page=0";
+            }
+        });
+    </script>
 </body>
 
 </html>

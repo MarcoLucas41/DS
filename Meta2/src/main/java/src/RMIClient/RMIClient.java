@@ -7,9 +7,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
-import java.util.InputMismatchException;
-import java.util.List;
-import java.util.Scanner;
+import java.rmi.RemoteException;
+import java.util.*;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 
 /**
  * Class that runs a client program
@@ -21,9 +23,11 @@ public class RMIClient
      * @param gateway
      * @throws Exception
      */
-    private void run(RMIGatewayInterface gateway) throws Exception {
+    private void run(RMIGatewayInterface gateway) throws Exception
+    {
         printMenu();
-
+        // Create a timer
+        Timer timer = new Timer();
         System.out.print("Type in new command: ");
         Scanner scanner = new Scanner(System.in);
 
@@ -39,12 +43,15 @@ public class RMIClient
                 scanner.next();
                 continue;
             }
-            switch (command) {
+            switch (command)
+            {
                 case 0:
+                    timer.cancel();
                     printMenu();
                     regular_messages();
                     break;
                 case 1:
+                    timer.cancel();
                     System.out.println("--------------------------------------------------------------------------");
                     System.out.print("Insert URL to webpage: ");
                     scanner.nextLine();
@@ -59,28 +66,51 @@ public class RMIClient
                     regular_messages();
                     break;
                 case 2:
+                    timer.cancel();
                     System.out.println("--------------------------------------------------------------------------");
                     searchWord(gateway, scanner);
                     break;
                 case 3:
+                    timer.cancel();
                     System.out.println("--------------------------------------------------------------------------");
                     searchLink(gateway, scanner);
                     regular_messages();
                     break;
                 case 4:
                     System.out.println("--------------------------------------------------------------------------");
-                    System.out.println(gateway.getAdminMenu());
-                    regular_messages();
+                    // Define the task to be executed repeatedly
+                    TimerTask task = new TimerTask() {
+                        @Override
+                        public void run()
+                        {
+                            // Print and flush content at a fixed rate
+                            try {
+                            System.out.print("\033[H\033[2J");
+                            System.out.flush();
+                            System.out.println(gateway.getAdminMenu());
+                            } catch (RemoteException e) {
+                                throw new RuntimeException(e);
+                        }
+                        }
+                    };
+
+                    // Schedule the task to run repeatedly every fixed interval (e.g., 1000 milliseconds = 1 second)
+                    timer.scheduleAtFixedRate(task, 0, 1000);
+                    //regular_messages();
                     break;
                 case 5:
+                    timer.cancel();
                     exit = true;
                     break;
                 default:
+                    timer.cancel();
                     System.out.println("--------------------------------------------------------------------------");
                     invalid_prompt();
                     break;
             }
-            if (exit) {
+            if (exit)
+            {
+                timer.cancel();
                 break;
             }
         }

@@ -6,18 +6,21 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-import retrofit2.http.PUT;
 import src.RMIGateway.Configuration;
 import src.RMIInterface.RMIGatewayInterface;
-import src.WebServer.OpenAI.AiService;
 
 @SpringBootApplication
-public class WebappGoogolApplication {
-
+public class SpringBootGoogolApplication
+{
 	public static void main(String[] args) {
-		SpringApplication.run(WebappGoogolApplication.class, args);
+		SpringApplication.run(SpringBootGoogolApplication.class, args);
 	}
 
+	/**
+	 * Allows the RMIGateway to be accessible to clients through the Web
+	 * @return Interface to interact with the Gateway server
+	 * @throws Exception
+	 */
 	@Bean
 	public RMIGatewayInterface searchGateway() throws Exception
 	{
@@ -38,9 +41,5 @@ public class WebappGoogolApplication {
 		return gateway;
 	}
 
-	@Bean
-	public AiService getAiServiceBean() throws Exception
-	{
-        return new AiService();
-	}
+
 }

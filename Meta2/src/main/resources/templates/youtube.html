@@ -2,13 +2,12 @@
 <html lang="en">
 
 <head>
-    <title>GOOGOL - Login</title>
+    <title>Search Engine</title>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
-        /* Estilos CSS da página anterior */
+        /* Estilos CSS */
 
         html,
         body {
@@ -47,20 +46,22 @@
             width: 80%;
         }
 
-        .form-container h2 {
+        h2 {
             color: #fff;
             font-size: 24px;
             margin-top: 0;
         }
 
-        .form-container input[type="text"],
-        .form-container input[type="password"],
-        .form-container button {
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        input[type="text"],
+        button {
             display: block;
             width: 80%;
             margin: 0 auto;
             padding: 10px;
-            margin-bottom: 10px;
             font-size: 16px;
             border: none;
             border-radius: 5px;
@@ -68,7 +69,7 @@
             color: #1a1e23;
         }
 
-        .form-container button {
+        button {
             background-color: #fff;
             color: #1a1e23;
             font-weight: bold;
@@ -78,26 +79,16 @@
             font-size: 14px;
         }
 
-        .form-container p {
+        p {
             color: #fff;
             font-size: 14px;
             margin-top: 10px;
-        }
-
-        .form-container a {
-            color: hsl(19, 90%, 52%);
-            text-decoration: none;
-        }
-
-        .form-container a:hover {
-            text-decoration: underline;
         }
 
         .animated-word {
             display: flex;
             align-items: center;
             justify-content: center;
-            size: 100px;
         }
 
         .letter {
@@ -128,8 +119,10 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-
     </style>
+
+
+
 </head>
 
 <body>
@@ -141,18 +134,26 @@
         </div>
     </h1>
     <div class="form-container">
-    <h2>Want to Login?</h2>
-    <form>  
-        <div class="form-group">
-            <input type="text" placeholder="Username" name="username" required onfocus="this.placeholder=''" onblur="this.placeholder='Username'">
-        </div>
-        <div class="form-group">
-            <input type="password" placeholder="Password" name="password" required onfocus="this.placeholder=''" onblur="this.placeholder='Password'">
-        </div>
-        <button type="submit">Login</button>
-    </form>
-    <p>Don't have an account yet? <a href="http://localhost:8080/register">Register</a></p>
-</div>
+        <h2>Youtube</h2>
+        <form>
+            <div class="form-group">
+                <input type="text" name="url" required>
+            </div>
+            <button type="submit">Search</button>
+        </form>
+        <p th:if="${results != null}" th:text="${results}"></p>
+    </div>
 
+    <script>
+        document.querySelector('.form-group input[type=text]').addEventListener('keyup', function (e)
+        {
+            if (e.keyCode == 13)
+            {
+                result = document.querySelector('.form-group input[type=text]').value
+                window.location.href = 'http://localhost:8080/getYoutubeResults/' + result + "?page=0";
+            }
+        });
+    </script>
 </body>
+
 </html>
